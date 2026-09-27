@@ -38,20 +38,14 @@ Tippe auf **Verbinden** und wähle deinen Scooter aus der Geräteliste des Brows
 Apollos DATA-Dienst (`F1F0`), um zu bestätigen, dass es wirklich ein Apollo-Scooter ist, und löst dann
 den AT/CMD-Dienst (`F2F0`) auf, um die PIN zu senden.
 
-## 3. Live-Werte - das bitte lesen, bevor du einer Zahl vertraust
+## 3. Live-Werte
 
 Die Karte **Live-Werte** entschlüsselt den 24-Byte-Telemetrie-Rahmen des Scooters (Kopfbyte `0xAB`).
-Bei jeder Kachel sind **Byte-Offset, Breite, Vorzeichen und `/10`-Skalierung bewiesen**, durch eigene
-Zerlegung der nativen Bibliothek von Apollo. **Nicht** bewiesen ist, welche physikalische Größe hinter
-welchem Offset steckt - ob Offset `0x00` Geschwindigkeit, Spannung oder etwas anderes ist, ließ sich
-ohne die zugehörige Kotlin-Datenklasse des Herstellers nicht klären, die bei der Zerlegung nicht
-vorlag. Deshalb tragen die Kacheln den Offset (`@0x00`, `@0x02`, ...) als Beschriftung, keinen
-geratenen Namen.
-
-Wenn du helfen willst, diese Lücke zu schließen: beobachte, welche Kachel sich beim Beschleunigen,
-Bremsen oder im Stillstand wie verändert, und vergleiche mit dem Display. Zwei Offsets (`0x0c` und
-`0x10`) sind 32-Bit-Zähler und mit hoher Wahrscheinlichkeit Trip- und Gesamtkilometerstand, in
-irgendeiner Reihenfolge; der Rest ist offen.
+Bei jeder Kachel sind **Byte-Offset, Breite, Vorzeichen, Skalierung und Feldname bewiesen**: die Offsets
+durch eigene Zerlegung der nativen Bibliothek von Apollo, die Namen durch die eigene Kotlin-Klasse
+`MonitorSnapshot` der Hersteller-App (gefunden durch eine erneute Zerlegung der App mit mehr
+Arbeitsspeicher). Offen bleibt nur, welches Bit im Fehler-Feld welchem Fehlercode (`E1`..`F2`)
+entspricht - diese Kachel zeigt bis dahin das rohe Bit-Feld als Hex.
 
 ## 4. Geschwindigkeit entsperren
 

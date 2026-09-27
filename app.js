@@ -5,7 +5,7 @@
 
 'use strict';
 
-const BUILD = 'v2';   // logged on load so a tester's log reveals which deployed build is running
+const BUILD = 'v3';   // logged on load so a tester's log reveals which deployed build is running
 
 // --------------------------- helpers ---------------------------
 
@@ -209,8 +209,8 @@ function openHelp(key) {
 function closeHelp() { const dlg = $('help'); if (!dlg) return; if (dlg.close) dlg.close(); else dlg.removeAttribute('open'); }
 function clearLog() { logLines.length = 0; const el = $('log'); if (el) el.textContent = ''; logDiagnosticHeader(); log('log cleared'); }
 function setTile(id, val) { const el = $(id); if (el) el.textContent = (val == null ? '-' : val); }
-const RAW_TILE_IDS = ['t-f00', 't-f02', 't-f04', 't-f06', 't-f08', 't-f0a', 't-f0c', 't-f10', 't-f14', 't-flags'];
-function resetTiles() { RAW_TILE_IDS.forEach(id => setTile(id, null)); }
+const LIVE_TILE_IDS = ['t-speed', 't-batt', 't-mileage', 't-volt', 't-motortemp', 't-esctemp', 't-total', 't-power', 't-current', 't-fault'];
+function resetTiles() { LIVE_TILE_IDS.forEach(id => setTile(id, null)); }
 function statusLabel(s) {
   const map = { disconnected: 'stDisconnected', connecting: 'stConnecting', connected: 'stConnected', 'no-service': 'stNoService', 'no-char': 'stNoChar' };
   return t(map[s] || 'stDisconnected') || s;
@@ -375,25 +375,25 @@ function handleFrame(b) {
   log('  note: unrecognized/undecoded head 0x' + head.toString(16) + ' (raw hex above). See GUIDE for what is and is not decoded yet.');
 }
 
-// Decodes the 24-byte monitor frame (head 0xAB), belegt native 0x8e5f0: offset/width/sign/scale
-// confirmed, field NAMES not - tiles are labelled by offset on purpose (see GUIDE).
+// Decodes the 24-byte MonitorSnapshot frame (head 0xAB), belegt native 0x8e5f0 (offsets) + the
+// decompiled MonitorSnapshot constructor/signature 0x184f1 (field names) - see GUIDE/gesamtanalyse.md.
 function decodeMonitorFrame(b) {
   if (b.length < 24) { log('  monitor frame too short (' + b.length + ' bytes, need >= 24) - not decoded.'); return; }
-  const f00 = rdS16BE(b, 0x00) / 10;
-  const f02 = rdU16BE(b, 0x02);
-  const f04 = rdS16BE(b, 0x04) / 10;
-  const f06 = rdU16BE(b, 0x06) / 10;
-  const f08 = rdS16BE(b, 0x08);
-  const f0a = rdS16BE(b, 0x0a);
-  const f0c = rdU32BE(b, 0x0c);
-  const f10 = rdU32BE(b, 0x10);
-  const f14 = rdS16BE(b, 0x14) / 10;
-  const flags = ((b[0x16] << 8) | b[0x17]) & 0xFFFF;
-  setTile('t-f00', f00.toFixed(1)); setTile('t-f02', String(f02)); setTile('t-f04', f04.toFixed(1)); setTile('t-f06', f06.toFixed(1));
-  setTile('t-f08', String(f08)); setTile('t-f0a', String(f0a)); setTile('t-f0c', String(f0c)); setTile('t-f10', String(f10));
-  setTile('t-f14', f14.toFixed(1)); setTile('t-flags', '0x' + flags.toString(16).padStart(4, '0'));
-  log('  monitor: @0x00=' + f00.toFixed(1) + ' @0x02=' + f02 + ' @0x04=' + f04.toFixed(1) + ' @0x06=' + f06.toFixed(1) +
-    ' @0x08=' + f08 + ' @0x0a=' + f0a + ' @0x0c=' + f0c + ' @0x10=' + f10 + ' @0x14=' + f14.toFixed(1) + ' flags=0x' + flags.toString(16), 'log-ok');
+  const speed = rdS16BE(b, 0x00) / 10;
+  const electricity = rdU16BE(b, 0x02);
+  const mileage = rdS16BE(b, 0x04) / 10;
+  const voltage = rdU16BE(b, 0x06) / 10;
+  const motorTemperature = rdS16BE(b, 0x08);
+  const escTemperature = rdS16BE(b, 0x0a);
+  const totalMileage = rdU32BE(b, 0x0c);
+  const power = rdU32BE(b, 0x10);
+  const current = rdS16BE(b, 0x14) / 10;
+  const flags = ((b[0x16] << 8) | b[0x17]) & 0xFFFF;   // faultCode bits, E1..F2 bit assignment not yet decoded
+  setTile('t-speed', speed.toFixed(1)); setTile('t-batt', String(electricity)); setTile('t-mileage', mileage.toFixed(1)); setTile('t-volt', voltage.toFixed(1));
+  setTile('t-motortemp', String(motorTemperature)); setTile('t-esctemp', String(escTemperature)); setTile('t-total', String(totalMileage)); setTile('t-power', String(power));
+  setTile('t-current', current.toFixed(1)); setTile('t-fault', '0x' + flags.toString(16).padStart(4, '0'));
+  log('  monitor: speed=' + speed.toFixed(1) + 'km/h electricity=' + electricity + '% mileage=' + mileage.toFixed(1) + 'km voltage=' + voltage.toFixed(1) + 'V' +
+    ' motorTemp=' + motorTemperature + ' escTemp=' + escTemperature + ' totalMileage=' + totalMileage + 'km power=' + power + 'W current=' + current.toFixed(1) + 'A flags=0x' + flags.toString(16), 'log-ok');
 }
 
 // --------------------------- writing frames + commands ---------------------------

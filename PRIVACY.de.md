@@ -32,4 +32,4 @@ Nichts geht an den Entwickler oder an ein Backend des Herstellers. Es gibt kein 
 
 ## Kontakt
 
-Bei Fragen zum Datenschutz wende dich an den Autor (Laufbursche) auf GitHub: https://github.com/Laufbursche42
+Bei Fragen zum Datenschutz wende dich an den Autor (Laufbursche) auf GitHub: [https://github.com/Laufbursche42](https://github.com/Laufbursche42)

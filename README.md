@@ -34,10 +34,10 @@ what is and is not decoded yet.
 - **A handful of other registers** the manufacturer app itself documents and can write: throttle and
   brake response, cruise-activation time, auto-shutdown time, service-interval mileage, and a total-
   mileage reset (register `0`, fixed value `8192`).
-- **Live telemetry, honestly labelled.** The 24-byte monitor frame's byte offsets, widths, signs and
-  `/10` scaling are confirmed by disassembly. Which physical quantity (speed? voltage? current? power?
-  temperature? mileage?) sits behind which offset is **not** confirmed - the tiles show the raw byte
-  offset, not a guessed name. See the guide for why.
+- **Live telemetry, named and cited.** The 24-byte monitor frame's byte offsets, widths, signs and
+  scaling are confirmed by disassembly, and the field names (speed, voltage, current, power,
+  temperatures, mileage, ...) are confirmed from the manufacturer app's own Kotlin class
+  `MonitorSnapshot`. Only the individual fault-code bit assignment is still open.
 - **A full protocol log** you can copy and share, plus a diagnostics scan that lists every device and
   its GATT services.
 - **The model list is Apollo's own**, copied unchanged from the app's `ScooterType` catalogue. It is a

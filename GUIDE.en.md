@@ -36,18 +36,14 @@ default `888888` is pre-filled (confirmed: the app's own `defaultPin`/`emulatorP
 (`F1F0`) to confirm it is really an Apollo scooter, then resolves the AT/CMD service (`F2F0`) to send
 the PIN.
 
-## 3. Live values - read this before you trust a number
+## 3. Live values
 
 The **Live values** card decodes the scooter's 24-byte telemetry frame (header byte `0xAB`). Every
-tile's **byte offset, width, sign and `/10` scaling is confirmed** by disassembling Apollo's own native
-library. What is **not** confirmed is which physical quantity each offset represents - whether offset
-`0x00` is speed, voltage, or something else was not recoverable without the manufacturer's own Kotlin
-data-class source, which was not available. That is why the tiles are labelled by offset (`@0x00`,
-`@0x02`, ...) instead of a guessed name.
-
-If you want to help close this gap: watch which tile changes when you accelerate, brake, or let the
-scooter sit idle, and compare against the display. Two offsets (`0x0c` and `0x10`) are 32-bit counters
-and are almost certainly the trip and total mileage, in some order; the rest is open.
+tile's **byte offset, width, sign and scaling, and its field name, are confirmed**: the offsets from
+disassembling Apollo's native library, the names from the manufacturer app's own Kotlin class
+`MonitorSnapshot` (recovered by re-decompiling the app with a larger heap). The one thing still open is
+which bit inside the fault-flags field maps to which fault code (`E1`..`F2`) - that tile shows the raw
+flag word in hex until that is resolved.
 
 ## 4. Speed unlock
 
