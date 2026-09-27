@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<!-- frame-ancestors is ignored in a meta element by the browser, it only works as an HTTP header.
+     GitHub Pages sends no custom headers, so it is left out here. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title data-t="pageTitle">Laufbursche Apollo Tool</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="favicon-180.png">
+<link rel="stylesheet" href="styles.css?v=1">
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Laufbursche <span data-t="brandSub"></span></h1>
+    <div class="head-right">
+      <span class="status" id="status" data-state="disconnected">disconnected</span>
+      <div class="head-tools">
+        <button type="button" class="theme-btn" id="btn-theme">&#9728;</button>
+        <div class="langs" id="langs" role="group">
+          <button type="button" data-lang="de" aria-pressed="true">DE</button>
+          <button type="button" data-lang="en" aria-pressed="false">EN</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="card">
+    <h2 data-t="s1Title"></h2>
+    <p class="hint" data-t="sub"></p>
+    <p class="hint" data-t="startHintGuide"></p>
+    <p class="warn" data-t="expWarn"></p>
+    <p class="hint" data-t="ownDevice"></p>
+  </div>
+
+  <div class="card">
+    <h2 data-t="s2Title"></h2>
+    <div class="set-row">
+      <label data-t="modelLabel"></label>
+      <select id="model-in"></select>
+    </div>
+    <p class="hint" data-t="modelHint"></p>
+    <div class="set-row">
+      <label data-t="pinLabel"></label>
+      <input id="pin-in" type="text" maxlength="8" value="888888" inputmode="numeric">
+    </div>
+    <div class="btns">
+      <button class="primary span2" id="btn-conn"></button>
+    </div>
+    <p class="hint" id="devinfo"></p>
+    <p class="hint" data-t="controlsHint"></p>
+  </div>
+
+  <div class="card" id="live-card" hidden>
+    <div class="card-head"><h2 data-t="liveTitle"></h2><button type="button" class="help-btn" data-help="live" aria-label="Info">?</button></div>
+    <p class="warn" data-t="liveWarn"></p>
+    <div class="grid">
+      <div class="tile"><b id="t-f00">-</b><small>@0x00</small></div>
+      <div class="tile"><b id="t-f02">-</b><small>@0x02</small></div>
+      <div class="tile"><b id="t-f04">-</b><small>@0x04</small></div>
+      <div class="tile"><b id="t-f06">-</b><small>@0x06</small></div>
+      <div class="tile"><b id="t-f08">-</b><small>@0x08</small></div>
+      <div class="tile"><b id="t-f0a">-</b><small>@0x0a</small></div>
+      <div class="tile"><b id="t-f0c">-</b><small>@0x0c</small></div>
+      <div class="tile"><b id="t-f10">-</b><small>@0x10</small></div>
+      <div class="tile"><b id="t-f14">-</b><small>@0x14</small></div>
+      <div class="tile"><b id="t-flags">-</b><small>@0x16 flags</small></div>
+    </div>
+    <p class="hint" data-t="liveHint"></p>
+  </div>
+
+  <div class="card" id="speed-card">
+    <div class="card-head"><h2 data-t="s3Title"></h2><button type="button" class="help-btn" data-help="speed" aria-label="Info">?</button></div>
+    <div class="btns">
+      <button class="primary span2" id="btn-toggle" disabled></button>
+    </div>
+    <div class="speed-values">
+      <div class="sv"><label data-t="lblOpen"></label><input id="speed-in" type="number" step="1" min="1" max="100" value="45" disabled></div>
+      <div class="sv"><label data-t="lblEkfv"></label><input id="ekfv-in" type="number" step="1" min="1" max="100" value="20" disabled></div>
+    </div>
+    <p class="hint" data-t="speedValuesHint"></p>
+  </div>
+
+  <div class="card" id="more-card" hidden>
+    <div class="card-head"><h2 data-t="moreTitle"></h2><button type="button" class="help-btn" data-help="more" aria-label="Info">?</button></div>
+    <p class="hint" data-t="moreHint"></p>
+
+    <h3 class="set-group" data-t="grp_ride"></h3>
+    <div class="set-row">
+      <label class="set-label"><span data-t="set_throttleAccel"></span></label>
+      <input id="throttle-accel-in" type="number" min="0" max="10" step="1" disabled>
+      <button type="button" id="btn-throttle-accel" data-t="btnSend" disabled></button>
+    </div>
+    <div class="set-row">
+      <label class="set-label"><span data-t="set_throttleBrake"></span></label>
+      <input id="throttle-brake-in" type="number" min="0" max="10" step="1" disabled>
+      <button type="button" id="btn-throttle-brake" data-t="btnSend" disabled></button>
+    </div>
+    <div class="set-row">
+      <label class="set-label"><span data-t="set_cruiseTime"></span></label>
+      <input id="cruise-time-in" type="number" min="2" max="30" step="1" disabled>
+      <button type="button" id="btn-cruise-time" data-t="btnSend" disabled></button>
+    </div>
+
+    <h3 class="set-group" data-t="grp_system"></h3>
+    <div class="set-row">
+      <label class="set-label"><span data-t="set_shutdownTime"></span></label>
+      <input id="shutdown-time-in" type="number" min="2" max="30" step="1" disabled>
+      <button type="button" id="btn-shutdown-time" data-t="btnSend" disabled></button>
+    </div>
+    <div class="set-row">
+      <label class="set-label"><span data-t="set_serviceKm"></span></label>
+      <input id="service-km-in" type="number" min="50" max="60000" step="50" disabled>
+      <button type="button" id="btn-service-km" data-t="btnSend" disabled></button>
+    </div>
+    <div class="set-row">
+      <label class="set-label"><span data-t="set_mileageReset"></span></label>
+      <span></span>
+      <button type="button" id="btn-mileage-reset" data-t="btnMileageReset" disabled></button>
+    </div>
+    <p class="hint" data-t="notYetReList"></p>
+  </div>
+
+  <div class="card">
+    <h2 data-t="s6Title"></h2>
+    <div class="btns">
+      <button type="button" id="btn-copy-log" data-t="btnCopyLog"></button>
+      <button type="button" id="btn-clear-log" data-t="btnClearLog"></button>
+      <button type="button" id="btn-diag" data-t="btnDiag"></button>
+    </div>
+    <p class="hint" data-t="diagHint"></p>
+    <pre id="log"></pre>
+    <p class="hint"><span class="log-tx" data-t="logTxLegend"></span>, <span class="log-rx" data-t="logRxLegend"></span></p>
+  </div>
+
+  <footer class="foot">
+    <span class="foot-links">
+      <a id="link-guide" href="GUIDE.de.md" data-doc="GUIDE" data-t="footGuide"></a>
+      <a href="https://github.com/Laufbursche42/ap-unlock" target="_blank" rel="noopener" data-t="footSource"></a>
+      <a id="link-readme" href="README.md" data-doc="README" data-t="footReadme"></a>
+      <a id="link-disclaimer" href="#" data-t="footDisclaimer"></a>
+      <a id="link-license" href="LICENSE.de.md" data-doc="LICENSE" data-t="footLicense"></a>
+      <a id="link-privacy" href="PRIVACY.de.md" data-doc="PRIVACY" data-t="footPrivacy"></a>
+      <a id="link-trademarks" href="TRADEMARKS.de.md" data-doc="TRADEMARKS" data-t="footTrademarks"></a>
+    </span>
+    <span class="ver" id="build-ver"></span>
+    <a class="foot-copy" href="https://laufbursche42.github.io/Laufbursche42/" target="_blank" rel="noopener">Copyright (c) 2026 Laufbursche</a>
+  </footer>
+</div>
+
+<dialog id="doc" aria-labelledby="doc-title">
+  <div class="doc-head">
+    <h3 id="doc-title"></h3>
+    <button type="button" id="doc-x">&times;</button>
+  </div>
+  <div class="doc-body" id="doc-body"></div>
+  <div class="doc-foot">
+    <button type="button" id="doc-close" data-t="docClose"></button>
+  </div>
+</dialog>
+
+<dialog id="help" aria-labelledby="help-title">
+  <div class="doc-head">
+    <h3 id="help-title"></h3>
+    <button type="button" id="help-x">&times;</button>
+  </div>
+  <div class="doc-body"><p id="help-body"></p><p id="help-warn" class="help-warn" hidden></p></div>
+  <div class="doc-foot">
+    <button type="button" id="help-close" data-t="docClose"></button>
+  </div>
+</dialog>
+
+<dialog id="confirm" aria-labelledby="confirm-title">
+  <div class="doc-head">
+    <h3 id="confirm-title" data-t="riskyTitle"></h3>
+    <button type="button" id="confirm-cancel-x">&times;</button>
+  </div>
+  <div class="doc-body"><p id="confirm-body"></p></div>
+  <div class="doc-foot">
+    <button type="button" id="confirm-cancel" data-t="riskyCancel"></button>
+    <button type="button" id="confirm-ok" class="primary" data-t="riskyOk"></button>
+  </div>
+</dialog>
+
+<script src="i18n.js?v=1"></script>
+<script src="app.js?v=1"></script>
+</body>
+</html>

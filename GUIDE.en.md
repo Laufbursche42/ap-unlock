@@ -1,0 +1,107 @@
+# Guide
+
+This guide walks through the Apollo tool step by step. It assumes nothing, and it is upfront about
+what is and is not reverse engineered yet.
+
+## What you need
+
+- An Apollo Scooters e-scooter (manufacturer app "Apollo Scooters", package `com.apolloscooters`).
+- A browser with Web Bluetooth: **Chrome** on Android or desktop, **Bluefy** on iPhone. Safari has no
+  Web Bluetooth.
+- The scooter on and in range.
+
+## Which scooters are supported
+
+The tool has no protocol-relevant model list: every register, frame and UUID used here was confirmed
+once, from Apollo's own app and its native library, and nothing in that confirmed material differs by
+model. The **Model** dropdown is copied from the manufacturer app's own `ScooterType` catalogue (28
+entries, e.g. "Apollo City 2023", "Apollo Phantom 2025") purely as a label for your own reference - it
+does not change how the page talks to the scooter.
+
+The manufacturer app itself recognizes a scooter's Bluetooth advertisement by name: a name starting
+with `hw`, `apollo` or `phantom` (case-insensitive) - this is copied verbatim from the app's own
+`isHwBleName` check. If your scooter's name does not match, it is not necessarily wrong: the GATT
+service found after connecting is the real test the page relies on.
+
+## 1. Open the page
+
+Open the page in the right browser. The header shows the connection status, the light/dark toggle and
+the DE/EN language switch.
+
+## 2. Connect
+
+The **Connection** card lets you pick a model label (optional) and enter the module PIN - the factory
+default `888888` is pre-filled (confirmed: the app's own `defaultPin`/`emulatorPassword`). Tap
+**Connect**, pick your scooter from the browser's device list. The page looks for Apollo's DATA service
+(`F1F0`) to confirm it is really an Apollo scooter, then resolves the AT/CMD service (`F2F0`) to send
+the PIN.
+
+## 3. Live values - read this before you trust a number
+
+The **Live values** card decodes the scooter's 24-byte telemetry frame (header byte `0xAB`). Every
+tile's **byte offset, width, sign and `/10` scaling is confirmed** by disassembling Apollo's own native
+library. What is **not** confirmed is which physical quantity each offset represents - whether offset
+`0x00` is speed, voltage, or something else was not recoverable without the manufacturer's own Kotlin
+data-class source, which was not available. That is why the tiles are labelled by offset (`@0x00`,
+`@0x02`, ...) instead of a guessed name.
+
+If you want to help close this gap: watch which tile changes when you accelerate, brake, or let the
+scooter sit idle, and compare against the display. Two offsets (`0x0c` and `0x10`) are 32-bit counters
+and are almost certainly the trip and total mileage, in some order; the rest is open.
+
+## 4. Speed unlock
+
+The **Speed** card writes register `32` (`0x20`, `limitedSpeedValue`) - this is the same register the
+manufacturer app's own code writes for the same purpose, with the same value encoding (km/h times 10).
+Two values are stored in your browser:
+
+- **Open (km/h):** written by **Unlock**.
+- **eKFV (km/h):** written by **Lock**.
+
+The defaults shown (45 / 20 km/h) are neutral placeholders, not values confirmed for your specific
+model or market - Apollo's own model catalogue lists a top speed anywhere from 35 to 100 km/h depending
+on model, so adjust these to your own situation.
+
+An echo in the log only means the controller received the write. Whether it actually changes the speed
+you can ride shows only in the live telemetry, and even that is offset-labelled rather than named (see
+above) - watch the scooter itself while testing.
+
+## 5. More settings
+
+The **More settings** card only lists registers whose address *and* value encoding are directly
+confirmed from the manufacturer app's own Kotlin bridge code (`ApolloBleScootersSdk.java`):
+
+- Throttle response (accel/brake), register 9 / 10.
+- Cruise-activation time, register 51.
+- Auto-shutdown time, register 52.
+- Service-interval mileage, register 73.
+- Total-mileage reset, register 0, a fixed value (`8192`) - the app's own code sends this exact value
+  for this exact purpose. This is a risky, one-shot write: it asks for confirmation first.
+
+## What is deliberately NOT in this tool
+
+- **The immobilizer (Ludo), gear selection and lights.** The manufacturer app writes these through a
+  different frame (`buildSetBaseParamsFrame`); its 10-byte header is confirmed but the bit position of
+  each individual flag inside the status byte could not be resolved from the disassembled library
+  alone - it would need the manufacturer's own call site, which was not available. Rather than guess a
+  bit position, this tool leaves the feature out entirely.
+- **Modulation depth, motor pole pairs, max discharge/braking current, undervoltage protection, wheel
+  diameter, carrier/PWM frequency.** The manufacturer app reads and displays these names, but no
+  write-register address for them was found anywhere in the recovered sources. Guessing one from a
+  different manufacturer's product would not be honest, so these are left out rather than faked.
+
+## If something does not work
+
+- **The scooter does not appear in the list.** Is it on and in range? Use the **Diagnostics: all
+  devices** button in the log card. It shows every Bluetooth device, classifies the name the same way
+  the manufacturer app does, and lists the GATT services after connecting. Then copy the log and send
+  it.
+- **PIN rejected / writes silently ignored.** The AT/CMD service might not have been found - check the
+  log for "AT/CMD service (F2F0) not found".
+- **No live-value tile fills in.** Check the log for incoming RX lines starting with a `0xAB` header
+  byte; frames shorter than 24 bytes are logged but not decoded.
+
+## Legal
+
+Raising the top speed removes the throttle limit. The road approval lapses and riding on public roads
+is then not allowed. Use the tool only on your own vehicle on private ground and at your own risk.

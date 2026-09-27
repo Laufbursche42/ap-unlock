@@ -1,0 +1,177 @@
+'use strict';
+
+// Jede sichtbare Zeichenkette der Seite, in beiden Sprachen. Die Schlüssel passen zu den
+// data-t-Attributen in index.html und zu den t()-Aufrufen in app.js, sodass ein fehlender
+// Eintrag als leeres Element auffällt statt still auf die andere Sprache zu fallen.
+// Deutsch ist die Voreinstellung; der Umschalter sitzt im Kopf.
+//
+// Das Log bleibt technisch und englisch (ASCII), damit ein Mitschnitt in einer Sprache bleibt.
+window.I18N = {
+  de: {
+    pageTitle: "Laufbursche Apollo Tool",
+    brandSub: "Apollo Tool",
+    langGroup: "Sprache",
+    themeToLight: "Auf helle Darstellung umschalten",
+    themeToDark: "Auf dunkle Darstellung umschalten",
+
+    s1Title: "So fängst du an",
+    sub: "Live über Web Bluetooth mit deinem Apollo-E-Scooter reden. Diese Seite ist für das iPhone gedacht (App Bluefy), läuft aber auch in Chrome oder Edge auf Android und Desktop. Nichts verlässt dein Gerät.",
+    startHintGuide: "Neu hier? In der <a href=\"GUIDE.de.md\" data-doc=\"GUIDE\" data-t=\"footGuide\">Anleitung</a> steht jeder Schritt.",
+    expWarn: "Machbarkeitsstudie: Diese Seite zeigt, was das Bluetooth-Protokoll eines Apollo-E-Scooters technisch möglich macht, sie ist kein fertiges Produkt. Jeder verwendete Wert wurde direkt aus der Hersteller-App und einer eigenen Zerlegung ihrer nativen Bibliothek gewonnen (siehe apollo_gesamtanalyse.md), aber nichts davon ist an einem echten Gerät verifiziert. Ein großer Teil der Live-Werte hat eine bewiesene Byte-Lage, aber noch keinen bewiesenen Namen - siehe die Karte Live-Werte. Fehlerfreier Betrieb wird nicht versprochen, es gibt keinerlei Gewährleistung. Alles, was du hier tust, tust du auf eigenes Risiko. <a href=\"#\" data-open-disclaimer>Haftungsausschluss lesen</a>.",
+    ownDevice: "Nur am eigenen Fahrzeug auf privatem Gelände. Das Anheben der Höchstgeschwindigkeit hebt die Drossel auf, die Betriebserlaubnis erlischt und der Betrieb auf öffentlichen Wegen ist dann nicht erlaubt.",
+
+    s2Title: "Verbindung",
+    modelLabel: "Modell",
+    modelAuto: "Automatisch / unbekannt",
+    modelHint: "Die Modellliste stammt unverändert aus der Hersteller-App (ihre eigene ScooterType-Aufzählung). Die Auswahl ist reine Beschriftung: das Bluetooth-Protokoll ist bei allen Apollo-Modellen gleich, soweit bisher zerlegt.",
+    pinLabel: "Modul-PIN",
+    btnConnect: "Verbinden",
+    btnDisconnect: "Trennen",
+    controlsHint: "Werks-Standard-PIN ist 888888 (belegt: defaultPin/emulatorPassword in der App). Web Bluetooth geht auf dem iPhone nur über die App Bluefy, auf Android oder Desktop über Chrome oder Edge.",
+
+    liveTitle: "Live-Werte vom Scooter",
+    liveWarn: "Achtung: Byte-Lage, Vorzeichen und Skalierung dieser zehn Felder sind aus der zerlegten App-Bibliothek bewiesen. WELCHE physikalische Größe (Geschwindigkeit, Spannung, Strom, Temperatur, Kilometerstand, ...) hinter welchem Offset steckt, ist NICHT bewiesen - die passende Kotlin-Klasse lag bei der Zerlegung nicht vor. Die Kacheln zeigen deshalb den rohen Byte-Offset, keinen Namen.",
+    liveHint: "Kachel-Beschriftung = Byte-Offset im 24-Byte-Monitor-Rahmen (Kopfbyte 0xAB). Die rohen Meldungen stehen zusätzlich als Hex im Log. Beobachte, welcher Wert sich beim Fahren/Bremsen/Stillstand wie verhält - das hilft, die Namen zuzuordnen.",
+
+    s3Title: "Geschwindigkeit",
+    lblOpen: "Offen (km/h)",
+    lblEkfv: "eKFV (km/h)",
+    speedValuesHint: "\"Entsperren\" schreibt den offenen Wert, \"Sperren\" den eKFV-Wert. Beide Werte merkt sich der Browser auf diesem Gerät. Die Vorgaben (20/45 km/h) sind neutrale Platzhalter, keine für dein Modell bestätigten Werte - dein Markt/Modell kann abweichen.",
+    settingsHint: "Der Knopf Entsperren/Sperren schreibt den jeweiligen Wert in Register 32 (0x20, \"limitedSpeedValue\") des Controllers, intern km/h mal 10 (belegt: ApolloBleScootersSdk.java, setAdvParams). Das Rahmenformat dieser Schreiboperation ist per Zerlegung der nativen Bibliothek bestätigt (siehe apollo_gesamtanalyse.md Teil 2.3).",
+
+    moreTitle: "Weitere Einstellungen",
+    moreHint: "Nur Register, deren Adresse UND Werteformat direkt aus der Hersteller-App (Kotlin-Bruecke) belegt sind. Es wirkt nur, was der Controller wirklich unterstützt und akzeptiert.",
+    grp_ride: "Fahrverhalten",
+    grp_system: "System",
+    set_throttleAccel: "Gasannahme Beschleunigung (Register 9)",
+    set_throttleBrake: "Gasannahme Bremse (Register 10)",
+    set_cruiseTime: "Tempomat-Aktivierungszeit, Sek. (Register 51)",
+    set_shutdownTime: "Auto-Abschaltzeit, Min. (Register 52)",
+    set_serviceKm: "Service-Intervall, km (Register 73)",
+    set_mileageReset: "Gesamt-Kilometerstand zurücksetzen (Register 0, fester Wert 8192)",
+    btnSend: "Senden",
+    btnMileageReset: "Zurücksetzen",
+    notYetReList: "Noch nicht reverse-engineered und deshalb absichtlich NICHT in dieser Liste: Modulationsgrad, Motor-Polpaare, max. Entladestrom, max. Bremsstrom, Unterspannungsschutz, Raddurchmesser, Trägerfrequenz (die App liest diese Namen, aber keine Schreib-Registeradresse dafür liegt vor) sowie die Wegfahrsperre (Ludo), Gangwahl, Beleuchtung und ein reiner \"entsperrt\"-Schalter (deren Rahmen-Bitlage im Statusbyte von buildSetBaseParamsFrame nicht entschlüsselt werden konnte). Siehe apollo_gesamtanalyse.md für den Stand.",
+    riskyTitle: "Heikle Einstellung",
+    riskyText: "Diese Einstellung greift tief in Motor, Akku oder den Kilometerstand ein. Falsche Werte können den Controller beschädigen oder den Kilometerstand dauerhaft verfälschen. Nur ändern, wenn du weißt, was du tust.",
+    riskyOk: "Trotzdem senden",
+    riskyCancel: "Abbrechen",
+
+    s6Title: "Protokoll-Log",
+    btnCopyLog: "Log kopieren",
+    btnClearLog: "Log leeren",
+    btnDiag: "Diagnose: alle Geräte",
+    diagHint: "Zeigt alle Bluetooth-Geräte an, ordnet den Namen nach dem Kriterium der Original-App ein (isHwBleName) und listet nach dem Verbinden die GATT-Dienste. Danach den Log kopieren und schicken.",
+    logTxLegend: "TX / blau = gesendet",
+    logRxLegend: "RX / braun = empfangen",
+
+    footGuide: "Anleitung",
+    footDisclaimer: "Haftungsausschluss",
+    disclaimerText: "Dieses Werkzeug ist eine Machbarkeitsstudie, kein fertiges Produkt. Jeder verwendete Protokollwert stammt direkt aus der Hersteller-App bzw. einer eigenen Zerlegung ihrer nativen Bibliothek libapollo-ble.so (siehe apollo_gesamtanalyse.md), nichts davon ist an einem echten Apollo-Scooter getestet. Es gibt keine Gewährleistung und keine Garantie für fehlerfreien Betrieb. Das Anheben der Geschwindigkeit hebt die Drossel auf: die Betriebserlaubnis erlischt und der Betrieb auf öffentlichen Wegen ist dann nicht erlaubt. Nutzung ausschließlich am eigenen Fahrzeug und auf eigenes Risiko. Die Seite spricht nur lokal per Bluetooth mit dem Gerät, es werden keine Daten an einen Server gesendet. Apollo ist eine Marke des jeweiligen Inhabers. Dieses Projekt ist unabhängig und nicht mit Apollo Scooters verbunden.",
+    footSource: "Quellcode",
+    footReadme: "Readme",
+    footLicense: "Lizenz",
+    footPrivacy: "Datenschutz",
+    footTrademarks: "Marken",
+    buildLabel: "Build",
+    docClose: "Schließen",
+    docLoading: "wird geladen ...",
+    docFail: "Das Dokument konnte nicht geladen werden.",
+    docEnglish: "(englisch)",
+
+    btnUnlock: "Entsperren",
+    btnLock: "Sperren",
+
+    stDisconnected: "getrennt",
+    stConnecting: "verbinde ...",
+    stConnected: "verbunden",
+    stNoService: "kein Dienst",
+    stNoChar: "keine Merkmale",
+    devPrefix: "Gerät:",
+    devConnected: "verbunden, empfängt Daten"
+  },
+
+  en: {
+    pageTitle: "Laufbursche Apollo Tool",
+    brandSub: "Apollo Tool",
+    langGroup: "Language",
+    themeToLight: "Switch to light theme",
+    themeToDark: "Switch to dark theme",
+
+    s1Title: "Getting started",
+    sub: "Talk to your Apollo scooter live over Web Bluetooth. This page is meant for the iPhone (Bluefy app), but also runs in Chrome or Edge on Android and desktop. Nothing leaves your device.",
+    startHintGuide: "New here? Every step is in the <a href=\"GUIDE.en.md\" data-doc=\"GUIDE\" data-t=\"footGuide\">guide</a>.",
+    expWarn: "Feasibility study: this page shows what an Apollo scooter's Bluetooth protocol makes possible, it is not a finished product. Every value used here was read directly out of the manufacturer app and our own disassembly of its native library (see apollo_gesamtanalyse.md), but none of it is verified on a real device. A good part of the live telemetry has a proven byte layout but no proven name yet - see the Live values card. Error-free operation is not promised and there is no warranty of any kind. Whatever you do here, you do at your own risk. <a href=\"#\" data-open-disclaimer>Read the disclaimer</a>.",
+    ownDevice: "Only on your own vehicle on private ground. Raising the top speed removes the throttle limit, the type approval lapses and operating it on public roads is then not allowed.",
+
+    s2Title: "Connection",
+    modelLabel: "Model",
+    modelAuto: "Automatic / unknown",
+    modelHint: "The model list is copied unchanged from the manufacturer app's own ScooterType enum. The choice is a label only: the Bluetooth protocol is the same across Apollo models as far as this has been reverse engineered.",
+    pinLabel: "Module PIN",
+    btnConnect: "Connect",
+    btnDisconnect: "Disconnect",
+    controlsHint: "Factory default PIN is 888888 (confirmed: defaultPin/emulatorPassword in the app). Web Bluetooth only works through the Bluefy app on iPhone; on Android or desktop use Chrome or Edge.",
+
+    liveTitle: "Live values from the scooter",
+    liveWarn: "Note: the byte width, sign and scaling of these ten fields are proven from the disassembled app library. WHICH physical quantity (speed, voltage, current, temperature, mileage, ...) sits behind which offset is NOT proven - the matching Kotlin class was not recovered. Tiles therefore show the raw byte offset, not a name.",
+    liveHint: "Tile label = byte offset inside the 24-byte monitor frame (header byte 0xAB). The raw messages are also logged as hex. Watch which value moves with speed/braking/idle - that helps pin the naming down.",
+
+    s3Title: "Speed",
+    lblOpen: "Open (km/h)",
+    lblEkfv: "eKFV (km/h)",
+    speedValuesHint: "\"Unlock\" writes the open value, \"Lock\" the eKFV value. Both values are remembered in this browser. The defaults (20/45 km/h) are neutral placeholders, not values confirmed for your model - your market/model may differ.",
+    settingsHint: "The Unlock/Lock button writes the respective value into register 32 (0x20, \"limitedSpeedValue\") of the controller, internally km/h times 10 (confirmed: ApolloBleScootersSdk.java, setAdvParams). This write's frame format is confirmed by disassembly of the native library (see apollo_gesamtanalyse.md Part 2.3).",
+
+    moreTitle: "More settings",
+    moreHint: "Only registers whose address AND value encoding are directly confirmed from the manufacturer app's own Kotlin bridge. Only what the controller genuinely supports and accepts takes effect.",
+    grp_ride: "Ride behaviour",
+    grp_system: "System",
+    set_throttleAccel: "Throttle response, accel (register 9)",
+    set_throttleBrake: "Throttle response, brake (register 10)",
+    set_cruiseTime: "Cruise activation time, sec (register 51)",
+    set_shutdownTime: "Auto power-off time, min (register 52)",
+    set_serviceKm: "Service interval, km (register 73)",
+    set_mileageReset: "Reset total mileage (register 0, fixed value 8192)",
+    btnSend: "Send",
+    btnMileageReset: "Reset",
+    notYetReList: "Not yet reverse engineered and therefore deliberately left out of this list: modulation depth, motor pole pairs, max discharge current, max braking current, undervoltage protection, wheel diameter, carrier/PWM frequency (the app reads these names but no write-register address for them was recovered), plus the immobilizer (Ludo), gear selection, lights and a plain \"unlocked\" toggle (their bit position inside buildSetBaseParamsFrame's status byte could not be decoded). See apollo_gesamtanalyse.md for the current state.",
+    riskyTitle: "Risky setting",
+    riskyText: "This setting reaches deep into the motor, battery or the odometer. Wrong values can damage the controller or permanently corrupt the mileage. Only change it if you know what you are doing.",
+    riskyOk: "Send anyway",
+    riskyCancel: "Cancel",
+
+    s6Title: "Protocol log",
+    btnCopyLog: "Copy log",
+    btnClearLog: "Clear log",
+    btnDiag: "Diagnostics: all devices",
+    diagHint: "Shows every Bluetooth device, classifies the name by the same rule the real app uses (isHwBleName) and lists the GATT services after connecting. Then copy the log and send it.",
+    logTxLegend: "TX / blue = sent",
+    logRxLegend: "RX / brown = received",
+
+    footGuide: "Guide",
+    footDisclaimer: "Disclaimer",
+    disclaimerText: "This tool is a feasibility study, not a finished product. Every protocol value used here comes directly from the manufacturer app or our own disassembly of its native library libapollo-ble.so (see apollo_gesamtanalyse.md); none of it is tested on a real Apollo scooter. There is no warranty and no guarantee of error-free operation. Raising the speed removes the throttle: the type approval becomes void and riding on public roads is then not allowed. Use it only on your own vehicle and at your own risk. The page talks to the device locally over Bluetooth only, no data is sent to any server. Apollo is a trademark of its respective owner. This project is independent and not affiliated with Apollo Scooters.",
+    footSource: "Source",
+    footReadme: "Readme",
+    footLicense: "License",
+    footPrivacy: "Privacy",
+    footTrademarks: "Trademarks",
+    buildLabel: "build",
+    docClose: "Close",
+    docLoading: "loading ...",
+    docFail: "The document could not be loaded.",
+    docEnglish: "(English)",
+
+    btnUnlock: "Unlock",
+    btnLock: "Lock",
+
+    stDisconnected: "disconnected",
+    stConnecting: "connecting ...",
+    stConnected: "connected",
+    stNoService: "no service",
+    stNoChar: "no characteristic",
+    devPrefix: "Device:",
+    devConnected: "connected, receiving"
+  }
+};
