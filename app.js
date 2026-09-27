@@ -5,7 +5,7 @@
 
 'use strict';
 
-const BUILD = 'v1';   // logged on load so a tester's log reveals which deployed build is running
+const BUILD = 'v2';   // logged on load so a tester's log reveals which deployed build is running
 
 // --------------------------- helpers ---------------------------
 
@@ -512,25 +512,26 @@ function mdToHtml(src) {
     });
   const lines = String(src).replace(/\r\n?/g, '\n').split('\n');
   const out = [];
-  let listKind = null, li = null, para = [], inFence = false;
+  let listKind = null, li = null, para = [], bq = [], inFence = false;
   const sink = () => (li ? li.parts : out);
   const flushPara = () => { if (para.length) { sink().push('<p>' + inline(para.join(' ')) + '</p>'); para = []; } };
+  const flushBq = () => { if (bq.length) { sink().push('<blockquote><p>' + inline(bq.join(' ')) + '</p></blockquote>'); bq = []; } };
   const closeNested = () => { if (li && li.nested) { li.parts.push('</ul>'); li.nested = false; } };
-  const closeLi = () => { if (!li) return; flushPara(); closeNested(); out.push('<li>' + li.parts.join('\n') + '</li>'); li = null; };
+  const closeLi = () => { if (!li) return; flushPara(); flushBq(); closeNested(); out.push('<li>' + li.parts.join('\n') + '</li>'); li = null; };
   const closeList = () => { closeLi(); if (listKind) { out.push('</' + listKind + '>'); listKind = null; } };
-  const block = () => { flushPara(); closeList(); };
-  const openList = kind => { flushPara(); if (listKind !== kind) { closeList(); out.push('<' + kind + '>'); listKind = kind; } else closeLi(); };
+  const block = () => { flushPara(); flushBq(); closeList(); };
+  const openList = kind => { flushPara(); flushBq(); if (listKind !== kind) { closeList(); out.push('<' + kind + '>'); listKind = kind; } else closeLi(); };
   const cells = l => l.replace(/^\||\|$/g, '').split('|').map(c => c.trim());
   for (let i = 0; i < lines.length; i++) {
     const l = lines[i];
     const body = l.trim();
     const indented = /^ {2,}\S/.test(l);
     if (inFence) { if (body.startsWith('```')) { sink().push('</code></pre>'); inFence = false; } else sink().push(escHtml(l)); continue; }
-    if (body.startsWith('```')) { if (li) { flushPara(); closeNested(); } else block(); sink().push('<pre><code>'); inFence = true; continue; }
+    if (body.startsWith('```')) { if (li) { flushPara(); flushBq(); closeNested(); } else block(); sink().push('<pre><code>'); inFence = true; continue; }
     if (body === '') { if (li && /^ {2,}\S/.test(lines[i + 1] || '')) flushPara(); else block(); continue; }
     if (/^(-{3,}|\*{3,}|_{3,})\s*$/.test(body)) { block(); out.push('<hr>'); continue; }
     if (body.startsWith('|') && /^\|[\s:|-]+\|?\s*$/.test((lines[i + 1] || '').trim())) {
-      if (li) { flushPara(); closeNested(); } else block();
+      if (li) { flushPara(); flushBq(); closeNested(); } else block();
       sink().push('<div class="doc-table"><table><thead><tr>' + cells(body).map(c => '<th>' + inline(c) + '</th>').join('') + '</tr></thead><tbody>');
       i++;
       while (i + 1 < lines.length && lines[i + 1].trim().startsWith('|')) sink().push('<tr>' + cells(lines[++i].trim()).map(c => '<td>' + inline(c) + '</td>').join('') + '</tr>');
@@ -539,12 +540,13 @@ function mdToHtml(src) {
     }
     let m;
     if ((m = body.match(/^(#{1,4})\s+(.*)$/))) { block(); const n = m[1].length; out.push(`<h${n} id="${slug(m[2])}">${inline(m[2])}</h${n}>`); continue; }
-    if ((m = body.match(/^>\s?(.*)$/))) { if (li) { flushPara(); closeNested(); } else block(); sink().push('<blockquote>' + inline(m[1]) + '</blockquote>'); continue; }
-    if (indented && li && (m = body.match(/^[-*]\s+(.*)$/))) { flushPara(); if (!li.nested) { li.parts.push('<ul class="nested">'); li.nested = true; } li.parts.push('<li>' + inline(m[1]) + '</li>'); continue; }
+    if ((m = body.match(/^>\s?(.*)$/))) { if (li) { flushPara(); closeNested(); } else flushPara(); bq.push(m[1]); continue; }
+    if (indented && li && (m = body.match(/^[-*]\s+(.*)$/))) { flushPara(); flushBq(); if (!li.nested) { li.parts.push('<ul class="nested">'); li.nested = true; } li.parts.push('<li>' + inline(m[1]) + '</li>'); continue; }
     if ((m = body.match(/^[-*]\s+(.*)$/)) && !indented) { openList('ul'); li = { parts: [inline(m[1])], nested: false }; continue; }
     if ((m = body.match(/^\d+\.\s+(.*)$/)) && !indented) { openList('ol'); li = { parts: [inline(m[1])], nested: false }; continue; }
     if (li && !indented) closeList();
     if (li) closeNested();
+    flushBq();
     para.push(body);
   }
   if (inFence) sink().push('</code></pre>');

@@ -32,4 +32,4 @@ Nothing is ever sent to the developer or to any manufacturer backend. There is n
 
 ## Contact
 
-For privacy questions, contact the author (Laufbursche) on GitHub: https://github.com/Laufbursche42
+For privacy questions, contact the author (Laufbursche) on GitHub: [https://github.com/Laufbursche42](https://github.com/Laufbursche42)
