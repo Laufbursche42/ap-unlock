@@ -10,7 +10,9 @@ It runs in **Bluefy** on iOS and in **Chrome** on Android or desktop.
 > library `libapollo-ble.so`. Nothing is borrowed from any other manufacturer's app. None of it is
 > verified on a real Apollo scooter. Read the [Disclaimer](#disclaimer) before you connect a scooter.
 
-Run it yourself, no build step, no dependencies: clone the repo and serve the folder over a local
+**Open the web app: [laufbursche42.github.io/ap-unlock](https://laufbursche42.github.io/ap-unlock/)**
+
+Or run it yourself, no build step, no dependencies: clone the repo and serve the folder over a local
 HTTP server. Opening `index.html` directly as a `file://` URL will not work, the page fetches its own
 documents and browsers block that over `file://`.
 
