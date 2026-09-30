@@ -5,7 +5,7 @@
 
 'use strict';
 
-const BUILD = 'v3';   // logged on load so a tester's log reveals which deployed build is running
+const BUILD = 'v4';   // logged on load so a tester's log reveals which deployed build is running
 
 // --------------------------- helpers ---------------------------
 
@@ -62,6 +62,32 @@ function apolloWriteU16(addr, value) {
   return apolloWriteFrame(addr, [(v >>> 8) & 0xFF, v & 0xFF]);
 }
 
+// --------------------------- engine-layer write paths (belegt, native engine trace 30.09.2026) ---------------------------
+// engineSendLight/engineSetAdvParamArr/engineSetSnCode all queue a {addr,value[]} pair that is later
+// wrapped by the exact same buildWriteCommand impl (0x8af54, confirmed sole non-JNI-wrapper caller in
+// the whole .so) - see apollo_gesamtanalyse.md Teil 2.3 "Vom unframed Payload zum GATT-Schreib-Rahmen".
+
+// buildLightInstruction (native 0x8bc94): addr is a fixed engine constant 0x47, payload type/r/g/b (4 bytes).
+function apolloLightFrame(type, r, g, b) {
+  return apolloWriteFrame(0x47, [type & 0xFF, r & 0xFF, g & 0xFF, b & 0xFF]);
+}
+
+// buildAdvParamValueArr core builder (native 0x8bbf0): addr=paramIndex, payload=values BE16 each, no paramIndex inside value[].
+function apolloAdvParamArrFrame(paramIndex, values) {
+  const payload = [];
+  values.forEach(v => { const x = Math.round(v) & 0xFFFF; payload.push((x >>> 8) & 0xFF, x & 0xFF); });
+  return apolloWriteFrame(paramIndex & 0xFFFF, payload);
+}
+
+// buildSnCode (native 0x8bd04): addr fixed 0x0035, payload = 13 raw SN bytes + trailing '0'. Exact 13-char length required.
+function apolloSnCodeFrame(sn) {
+  if (typeof sn !== 'string' || sn.length !== 13) return null;
+  const bytes = [];
+  for (let i = 0; i < 13; i++) bytes.push(sn.charCodeAt(i) & 0xFF);
+  bytes.push(0x30);
+  return apolloWriteFrame(0x0035, bytes);
+}
+
 // --------------------------- self-test against belegte vectors ---------------------------
 let PROTO_OK = false;
 (function protoSelfTest() {
@@ -80,6 +106,10 @@ let PROTO_OK = false;
         f[10] === 0x02 && f[11] === 0x01 && f[12] === 0x2C;
     })(),
     (function () { const f = apolloWriteU16(0x20, 300); return f[2] === 0x00 && f[3] === 0x20 && f[11] === 0x01 && f[12] === 0x2C; })(),
+    eq(apolloLightFrame(1, 2, 3, 4), '01 17 00 47 00 02 00 47 00 02 04 01 02 03 04 D7 6D'),
+    eq(apolloAdvParamArrFrame(32, [300, 500]), '01 17 00 20 00 02 00 20 00 02 04 01 2C 01 F4 84 C5'),
+    eq(apolloSnCodeFrame('ABCDEFGHIJKLM'), '01 17 00 35 00 07 00 35 00 07 0E 41 42 43 44 45 46 47 48 49 4A 4B 4C 4D 30 B5 52'),
+    apolloSnCodeFrame('TOOSHORT') === null,
   ];
   PROTO_OK = ok.every(Boolean);
 })();
@@ -197,7 +227,7 @@ function copyLogFallback(text) {
     document.body.removeChild(ta); return !!ok;
   } catch (e) { return false; }
 }
-const HELP = { speed: ['s3Title', 'settingsHint'], live: ['liveTitle', 'liveHint'], more: ['moreTitle', 'moreHint'], disclaimer: ['footDisclaimer', 'disclaimerText'] };
+const HELP = { speed: ['s3Title', 'settingsHint'], live: ['liveTitle', 'liveHint'], more: ['moreTitle', 'moreHint'], raw: ['rawTitle', 'rawHint'], disclaimer: ['footDisclaimer', 'disclaimerText'] };
 function openHelp(key) {
   const m = HELP[key]; if (!m) return;
   const dlg = $('help'); if (!dlg) return;
@@ -222,10 +252,13 @@ function setStatus(s) {
 }
 function setControlsEnabled(on) {
   const list = ['btn-toggle', 'speed-in', 'ekfv-in', 'btn-throttle-accel', 'btn-throttle-brake', 'btn-cruise-time', 'btn-shutdown-time', 'btn-service-km', 'btn-mileage-reset',
-    'throttle-accel-in', 'throttle-brake-in', 'cruise-time-in', 'shutdown-time-in', 'service-km-in'];
+    'throttle-accel-in', 'throttle-brake-in', 'cruise-time-in', 'shutdown-time-in', 'service-km-in',
+    'light-type-in', 'light-r-in', 'light-g-in', 'light-b-in', 'btn-light-send',
+    'advarr-index-in', 'advarr-values-in', 'btn-advarr-send', 'sncode-in', 'btn-sncode-send'];
   list.forEach(id => { const el = $(id); if (el) el.disabled = !on; });
   const liveCard = $('live-card'); if (liveCard) liveCard.hidden = !on;
   const moreCard = $('more-card'); if (moreCard) moreCard.hidden = !on;
+  const rawCard = $('raw-card'); if (rawCard) rawCard.hidden = !on;
 }
 function openSpeedValue() { const v = parseInt(($('speed-in') || {}).value, 10); return isNaN(v) ? 45 : v; }
 function ekfvSpeedValue() { const v = parseInt(($('ekfv-in') || {}).value, 10); return isNaN(v) ? 20 : v; }
@@ -442,6 +475,17 @@ function cmdSetMaxSpeed(kmh) {
 function cmdMileageReset() {
   transmit(apolloWriteU16(TOTAL_MILEAGE_RESET.addr, TOTAL_MILEAGE_RESET.value), 'total mileage reset (register 0, magic value ' + TOTAL_MILEAGE_RESET.value + ', belegt ApolloBleScootersSdk.java:726)', 'write0');
 }
+function cmdSendLight(type, r, g, b) {
+  transmit(apolloLightFrame(type, r, g, b), 'light instruction type=' + type + ' r=' + r + ' g=' + g + ' b=' + b + '  ->  addr 0x47 (engine-fixed)', 'write71');
+}
+function cmdSendAdvParamArr(paramIndex, values) {
+  transmit(apolloAdvParamArrFrame(paramIndex, values), 'adv-param array index=' + paramIndex + ' values=[' + values.join(',') + ']  ->  addr ' + paramIndex + ' (0x' + paramIndex.toString(16) + ')', 'write' + paramIndex);
+}
+function cmdSendSnCode(sn) {
+  const f = apolloSnCodeFrame(sn);
+  if (!f) { log('SN code must be exactly 13 characters, got ' + (sn ? sn.length : 0) + '.', 'log-err'); return; }
+  transmit(f, 'SN code write = "' + sn + '"  ->  addr 0x0035 (identity-changing)', 'write53');
+}
 
 // Themed confirm for a risky write. Falls back to window.confirm if the dialog is missing.
 function confirmRisky(name, onOk) {
@@ -630,6 +674,20 @@ window.addEventListener('DOMContentLoaded', () => {
   { const b = $('btn-shutdown-time'); if (b) b.addEventListener('click', () => { const v = parseInt(($('shutdown-time-in') || {}).value, 10); if (!isNaN(v)) cmdWriteRegister('shutdownTime', v, t('set_shutdownTime')); }); }
   { const b = $('btn-service-km'); if (b) b.addEventListener('click', () => { const v = parseInt(($('service-km-in') || {}).value, 10); if (!isNaN(v)) cmdWriteRegister('serviceMileage', v, t('set_serviceKm')); }); }
   { const b = $('btn-mileage-reset'); if (b) b.addEventListener('click', () => confirmRisky(t('set_mileageReset'), cmdMileageReset)); }
+  { const b = $('btn-light-send'); if (b) b.addEventListener('click', () => {
+    const n = id => { const v = parseInt(($(id) || {}).value, 10); return isNaN(v) ? 0 : v; };
+    cmdSendLight(n('light-type-in'), n('light-r-in'), n('light-g-in'), n('light-b-in'));
+  }); }
+  { const b = $('btn-advarr-send'); if (b) b.addEventListener('click', () => {
+    const idx = parseInt(($('advarr-index-in') || {}).value, 10);
+    const raw = (($('advarr-values-in') || {}).value || '').split(/[,\s]+/).map(s => parseInt(s, 10)).filter(v => !isNaN(v));
+    if (isNaN(idx) || !raw.length) { log('adv-param array: need a register index and at least one value.', 'log-err'); return; }
+    cmdSendAdvParamArr(idx, raw);
+  }); }
+  { const b = $('btn-sncode-send'); if (b) b.addEventListener('click', () => {
+    const sn = (($('sncode-in') || {}).value || '').trim();
+    confirmRisky(t('lblSnCode') + ': "' + sn + '"', () => cmdSendSnCode(sn));
+  }); }
   { const b = $('btn-copy-log'); if (b) b.addEventListener('click', copyLog); }
   { const b = $('btn-diag'); if (b) b.addEventListener('click', scanAllDevicesDiagnostic); }
   { const b = $('btn-clear-log'); if (b) b.addEventListener('click', clearLog); }

@@ -10,7 +10,7 @@
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="apple-touch-icon" sizes="180x180" href="favicon-180.png">
-<link rel="stylesheet" href="styles.css?v=3">
+<link rel="stylesheet" href="styles.css?v=4">
 </head>
 <body>
 <div class="wrap">
@@ -124,6 +124,44 @@
     <p class="hint" data-t="notYetReList"></p>
   </div>
 
+  <div class="card" id="raw-card" hidden>
+    <div class="card-head"><h2 data-t="rawTitle"></h2><button type="button" class="help-btn" data-help="raw" aria-label="Info">?</button></div>
+    <p class="hint" data-t="rawHint"></p>
+
+    <h3 class="set-group" data-t="grp_light"></h3>
+    <div class="speed-values">
+      <div class="sv"><label data-t="lblLightType"></label><input id="light-type-in" type="number" min="0" max="255" step="1" value="0" disabled></div>
+      <div class="sv"><label data-t="lblLightR"></label><input id="light-r-in" type="number" min="0" max="255" step="1" value="0" disabled></div>
+    </div>
+    <div class="speed-values">
+      <div class="sv"><label data-t="lblLightG"></label><input id="light-g-in" type="number" min="0" max="255" step="1" value="0" disabled></div>
+      <div class="sv"><label data-t="lblLightB"></label><input id="light-b-in" type="number" min="0" max="255" step="1" value="0" disabled></div>
+    </div>
+    <div class="btns">
+      <button type="button" class="primary span2" id="btn-light-send" data-t="btnSend" disabled></button>
+    </div>
+
+    <h3 class="set-group" data-t="grp_advarr"></h3>
+    <div class="speed-values">
+      <div class="sv"><label data-t="lblAdvArrIndex"></label><input id="advarr-index-in" type="number" min="0" max="65535" step="1" value="32" disabled></div>
+      <div class="sv"><label data-t="lblAdvArrValues"></label><input id="advarr-values-in" type="text" value="300" disabled></div>
+    </div>
+    <div class="btns">
+      <button type="button" class="primary span2" id="btn-advarr-send" data-t="btnSend" disabled></button>
+    </div>
+    <p class="hint" data-t="advArrHint"></p>
+
+    <h3 class="set-group" data-t="grp_sncode"></h3>
+    <p class="warn" data-t="snCodeWarn"></p>
+    <div class="set-row">
+      <label data-t="lblSnCode"></label>
+      <input id="sncode-in" type="text" maxlength="13" inputmode="text" disabled>
+    </div>
+    <div class="btns">
+      <button type="button" class="primary span2" id="btn-sncode-send" data-t="btnSnCodeSend" disabled></button>
+    </div>
+  </div>
+
   <div class="card">
     <h2 data-t="s6Title"></h2>
     <div class="btns">
@@ -185,7 +223,7 @@
   </div>
 </dialog>
 
-<script src="i18n.js?v=3"></script>
-<script src="app.js?v=3"></script>
+<script src="i18n.js?v=4"></script>
+<script src="app.js?v=4"></script>
 </body>
 </html>
