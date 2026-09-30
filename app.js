@@ -5,7 +5,7 @@
 
 'use strict';
 
-const BUILD = 'v4';   // logged on load so a tester's log reveals which deployed build is running
+const BUILD = 'v5';   // logged on load so a tester's log reveals which deployed build is running
 
 // --------------------------- helpers ---------------------------
 

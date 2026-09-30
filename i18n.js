@@ -17,7 +17,7 @@ window.I18N = {
     s1Title: "So fängst du an",
     sub: "Live über Web Bluetooth mit deinem Apollo-E-Scooter reden. Diese Seite ist für das iPhone gedacht (App Bluefy), läuft aber auch in Chrome oder Edge auf Android und Desktop. Nichts verlässt dein Gerät.",
     startHintGuide: "Neu hier? In der <a href=\"GUIDE.de.md\" data-doc=\"GUIDE\" data-t=\"footGuide\">Anleitung</a> steht jeder Schritt.",
-    expWarn: "Machbarkeitsstudie: Diese Seite zeigt, was das Bluetooth-Protokoll eines Apollo-E-Scooters technisch möglich macht, sie ist kein fertiges Produkt. Jeder verwendete Wert wurde direkt aus der Hersteller-App und einer eigenen Zerlegung ihrer nativen Bibliothek gewonnen (siehe apollo_gesamtanalyse.md), aber nichts davon ist an einem echten Gerät verifiziert. Ein großer Teil der Live-Werte hat eine bewiesene Byte-Lage, aber noch keinen bewiesenen Namen - siehe die Karte Live-Werte. Fehlerfreier Betrieb wird nicht versprochen, es gibt keinerlei Gewährleistung. Alles, was du hier tust, tust du auf eigenes Risiko. <a href=\"#\" data-open-disclaimer>Haftungsausschluss lesen</a>.",
+    expWarn: "Machbarkeitsstudie: Diese Seite zeigt, was das Bluetooth-Protokoll eines Apollo-E-Scooters an Live-Telemetrie und Einstellungen hergibt, ohne die Firmware zu flashen - sie ist kein fertiges Produkt. Jeder verwendete Wert wurde direkt aus der Hersteller-App und einer eigenen Zerlegung ihrer nativen Bibliothek gewonnen (siehe apollo_gesamtanalyse.md), aber nichts davon ist an einem echten Gerät verifiziert. Byte-Lage und Feldname der zehn Live-Werte sind inzwischen vollständig belegt (siehe Karte Live-Werte); offen bleibt dort nur die Bit-zu-Fehlercode-Zuordnung, und einzelne Schreibzugriffe wie Licht, Parameter-Array und Seriennummer weiter unten wurden bisher nicht an echter Hardware ausgelöst. Fehlerfreier Betrieb wird nicht versprochen, es gibt keinerlei Gewährleistung. Alles, was du hier tust, tust du auf eigenes Risiko. <a href=\"#\" data-open-disclaimer>Haftungsausschluss lesen</a>.",
     ownDevice: "Nur am eigenen Fahrzeug auf privatem Gelände. Das Anheben der Höchstgeschwindigkeit hebt die Drossel auf, die Betriebserlaubnis erlischt und der Betrieb auf öffentlichen Wegen ist dann nicht erlaubt.",
 
     s2Title: "Verbindung",
@@ -67,8 +67,8 @@ window.I18N = {
     riskyOk: "Trotzdem senden",
     riskyCancel: "Abbrechen",
 
-    rawTitle: "Roh-Schreibzugriffe (Engine-Ebene)",
-    rawHint: "Drei zusätzliche Schreibpfade, deren komplette Kette - vom rohen Payload-Bauer bis zum tatsächlichen GATT-Schreibaufruf - per Disassembly der Engine-Schicht nachvollzogen ist (apollo_gesamtanalyse.md Teil 2.3): Licht, Parameter-Array und Seriennummer. Alle drei laufen über denselben CRC-geprüften Schreib-Rahmen wie die Register oben, nur eben roh und ohne Wertebereichsprüfung.",
+    rawTitle: "Erweiterte Einstellungen (Engine-Ebene)",
+    rawHint: "Drei weitere Einstellungsmöglichkeiten auf Engine-Ebene - Licht, Parameter-Array und Seriennummer -, deren komplette Kette vom rohen Payload-Bauer bis zum tatsächlichen GATT-Schreibaufruf per Disassembly nachvollzogen ist (apollo_gesamtanalyse.md Teil 2.3). Alle drei laufen über denselben CRC-geprüften Schreib-Rahmen wie die Register oben, nur roh und ohne Wertebereichsprüfung.",
     grp_light: "Licht (RGB-Instruktion)",
     lblLightType: "Typ (0-255)",
     lblLightR: "R (0-255)",
@@ -127,7 +127,7 @@ window.I18N = {
     s1Title: "Getting started",
     sub: "Talk to your Apollo scooter live over Web Bluetooth. This page is meant for the iPhone (Bluefy app), but also runs in Chrome or Edge on Android and desktop. Nothing leaves your device.",
     startHintGuide: "New here? Every step is in the <a href=\"GUIDE.en.md\" data-doc=\"GUIDE\" data-t=\"footGuide\">guide</a>.",
-    expWarn: "Feasibility study: this page shows what an Apollo scooter's Bluetooth protocol makes possible, it is not a finished product. Every value used here was read directly out of the manufacturer app and our own disassembly of its native library (see apollo_gesamtanalyse.md), but none of it is verified on a real device. A good part of the live telemetry has a proven byte layout but no proven name yet - see the Live values card. Error-free operation is not promised and there is no warranty of any kind. Whatever you do here, you do at your own risk. <a href=\"#\" data-open-disclaimer>Read the disclaimer</a>.",
+    expWarn: "Feasibility study: this page shows what an Apollo scooter's Bluetooth protocol offers in live telemetry and tunable settings, without flashing firmware - it is not a finished product. Every value used here was read directly out of the manufacturer app and our own disassembly of its native library (see apollo_gesamtanalyse.md), but none of it is verified on a real device. Byte layout and field name of all ten live values are now fully confirmed (see the Live values card); the only thing still open there is the bit-to-fault-code mapping, and individual writes such as light, parameter array and serial number further down have not yet been fired against real hardware. Error-free operation is not promised and there is no warranty of any kind. Whatever you do here, you do at your own risk. <a href=\"#\" data-open-disclaimer>Read the disclaimer</a>.",
     ownDevice: "Only on your own vehicle on private ground. Raising the top speed removes the throttle limit, the type approval lapses and operating it on public roads is then not allowed.",
 
     s2Title: "Connection",
@@ -177,8 +177,8 @@ window.I18N = {
     riskyOk: "Send anyway",
     riskyCancel: "Cancel",
 
-    rawTitle: "Raw writes (engine layer)",
-    rawHint: "Three additional write paths whose complete chain - from the raw payload builder to the actual GATT write - has been traced through the engine layer by disassembly (apollo_gesamtanalyse.md Part 2.3): light, parameter array and serial number. All three go through the same CRC-checked write frame as the registers above, just raw and without range checking.",
+    rawTitle: "Advanced settings (engine level)",
+    rawHint: "Three more settings at the engine level - light, parameter array and serial number - whose complete chain, from the raw payload builder to the actual GATT write, has been traced through disassembly (apollo_gesamtanalyse.md Part 2.3). All three go through the same CRC-checked write frame as the registers above, just raw and without range checking.",
     grp_light: "Light (RGB instruction)",
     lblLightType: "Type (0-255)",
     lblLightR: "R (0-255)",
