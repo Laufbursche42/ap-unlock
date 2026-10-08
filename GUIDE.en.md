@@ -3,6 +3,8 @@
 This guide walks through the Apollo tool step by step. It assumes nothing, and it is upfront about
 what is and is not reverse engineered yet.
 
+> **Important for error reports:** switch on the **Diagnostic log** at the bottom of the page *before* you connect to the scooter. Only then is the full connection handshake captured - and those are exactly the lines we need in a [ticket](https://github.com/Laufbursche42/Laufbursche42/issues) to reproduce a problem.
+
 ## What you need
 
 - An Apollo Scooters e-scooter (manufacturer app "Apollo Scooters", package `com.apolloscooters`).
@@ -101,3 +103,6 @@ confirmed from the manufacturer app's own Kotlin bridge code (`ApolloBleScooters
 
 Raising the top speed removes the throttle limit. The road approval lapses and riding on public roads
 is then not allowed. Use the tool only on your own vehicle on private ground and at your own risk.
+
+## Contribute
+Want to find out if and how tuning works on your scooter? Test this tool on your own vehicle and open a ticket on [GitHub](https://github.com/Laufbursche42/Laufbursche42/issues) - with your model and what worked (or did not). That way we figure out together what is possible on which model.

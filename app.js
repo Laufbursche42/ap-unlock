@@ -1,11 +1,11 @@
 // Laufbursche Apollo Tool: a Web Bluetooth client for Apollo Scooters (app com.apolloscooters).
 // Protocol is Apollo's own "Mach" link (libapollo-ble.so, ApolloBleScootersSdk/ApolloBleTransport).
-// Every constant here comes from Apollo's own app/library disassembly, see apollo_gesamtanalyse.md.
+// Every constant here comes from Apollo's own app/library disassembly.
 // Not verified on a vehicle. Runs in Bluefy (iOS) or Chrome/Edge (Android/desktop); no Safari WebBT.
 
 'use strict';
 
-const BUILD = 'v5';   // logged on load so a tester's log reveals which deployed build is running
+const BUILD = 'v6';   // logged on load so a tester's log reveals which deployed build is running
 
 // --------------------------- helpers ---------------------------
 
@@ -49,8 +49,9 @@ function apolloWriteFrame(addr, valueBytes, flag) {
   return appendCrc(head);
 }
 
-// buildSetBaseParamsFrame (native 0x8b3e0): header AB 00 0A belegt, status-byte bit layout NOT resolved -
-// no lock/gear/light toggle implemented here for that reason (see GUIDE "not yet reverse-engineered").
+// buildSetBaseParamsFrame (native 0x8b3e0): 10-byte frame AB 00 0A, status byte + 4 mode bytes; status-byte bit layout now belegt.
+// Still not exposed: every switch shares one status byte and there is no proven read of current state, so a single-field
+// write would blindly overwrite the co-packed fields. No lock/gear/light toggle implemented here for that reason.
 
 // buildCheckPassword(pin) (native 0x8bfe4): "AT+PWD[" is a literal ASCII immediate, pin appended raw, no crypto.
 function apolloPwdCommand(pin) { return 'AT+PWD[' + pin + ']'; }
@@ -65,7 +66,7 @@ function apolloWriteU16(addr, value) {
 // --------------------------- engine-layer write paths (belegt, native engine trace 30.09.2026) ---------------------------
 // engineSendLight/engineSetAdvParamArr/engineSetSnCode all queue a {addr,value[]} pair that is later
 // wrapped by the exact same buildWriteCommand impl (0x8af54, confirmed sole non-JNI-wrapper caller in
-// the whole .so) - see apollo_gesamtanalyse.md Teil 2.3 "Vom unframed Payload zum GATT-Schreib-Rahmen".
+// the whole .so).
 
 // buildLightInstruction (native 0x8bc94): addr is a fixed engine constant 0x47, payload type/r/g/b (4 bytes).
 function apolloLightFrame(type, r, g, b) {
@@ -190,9 +191,8 @@ let keepTimer = null;
 function $(id) { return document.getElementById(id); }
 
 const logLines = [];
-function ts() { const d = new Date(); const p = (n, w) => String(n).padStart(w || 2, '0'); return p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds()) + '.' + p(d.getMilliseconds(), 3); }
 function log(m, cls) {
-  const line = '[' + ts() + '] ' + m;
+  const line = '[' + new Date().toTimeString().slice(0, 8) + '] ' + m;
   logLines.push(line);
   const el = $('log'); if (!el) return;
   const span = document.createElement('div');
@@ -205,11 +205,11 @@ function logDiagnosticHeader() {
   log('=== ap-unlock diagnostic ===');
   log('build: ' + BUILD);
   log('time: ' + new Date().toISOString());
-  log('userAgent: ' + (nav.userAgent || '(unknown)'));
-  log('platform: ' + (nav.platform || '(unknown)'));
+  log('userAgent: ' + (nav.userAgent || '?'));
+  log('platform: ' + (nav.platform || '?'));
   log('webBluetooth: ' + (nav.bluetooth ? 'yes' : 'no'));
-  log('protocol source: Apollo\'s own app only (native libapollo-ble.so disassembly + Kotlin bridge). See apollo_gesamtanalyse.md.', 'log-ok');
-  log('============================');
+  log('protocol self-test: ' + (PROTO_OK ? 'OK' : 'FAILED'));
+  log('================================');
 }
 async function copyLog() {
   const text = logLines.join('\n');
@@ -227,13 +227,24 @@ function copyLogFallback(text) {
     document.body.removeChild(ta); return !!ok;
   } catch (e) { return false; }
 }
-const HELP = { speed: ['s3Title', 'settingsHint'], live: ['liveTitle', 'liveHint'], more: ['moreTitle', 'moreHint'], raw: ['rawTitle', 'rawHint'], disclaimer: ['footDisclaimer', 'disclaimerText'] };
+// CRLF on Windows so the saved log pastes cleanly into Notepad.
+function osNewline() { return (navigator.platform || '').toLowerCase().indexOf('win') === 0 ? '\r\n' : '\n'; }
+function saveLog() {
+  try {
+    const blob = new Blob([logLines.join('\n').split('\n').join(osNewline())], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'laufbursche42-ap-unlock-log.txt';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    log('log saved (' + logLines.length + ' lines)', 'log-ok');
+  } catch (e) { log('save failed: ' + (e && e.message ? e.message : e), 'log-err'); }
+}
+const HELP = { speed: ['s3Title', 'settingsHint'], live: ['liveTitle', 'liveHint'], batt: ['help_batt_t', 'help_batt_b'], more: ['moreTitle', 'moreHint'], raw: ['rawTitle', 'rawHint'], disclaimer: ['footDisclaimer', 'disclaimerText'] };
 function openHelp(key) {
   const m = HELP[key]; if (!m) return;
   const dlg = $('help'); if (!dlg) return;
   const ti = $('help-title'); if (ti) ti.textContent = t(m[0]);
   const bo = $('help-body'); if (bo) bo.textContent = t(m[1]);
-  setHelpWarn('');
   if (dlg.showModal) { try { dlg.showModal(); } catch (e) { dlg.setAttribute('open', ''); } } else dlg.setAttribute('open', '');
 }
 function closeHelp() { const dlg = $('help'); if (!dlg) return; if (dlg.close) dlg.close(); else dlg.removeAttribute('open'); }
@@ -256,9 +267,8 @@ function setControlsEnabled(on) {
     'light-type-in', 'light-r-in', 'light-g-in', 'light-b-in', 'btn-light-send',
     'advarr-index-in', 'advarr-values-in', 'btn-advarr-send', 'sncode-in', 'btn-sncode-send'];
   list.forEach(id => { const el = $(id); if (el) el.disabled = !on; });
-  const liveCard = $('live-card'); if (liveCard) liveCard.hidden = !on;
-  const moreCard = $('more-card'); if (moreCard) moreCard.hidden = !on;
-  const rawCard = $('raw-card'); if (rawCard) rawCard.hidden = !on;
+  // telemetry + settings cards hidden until connected; on load only intro/connect/log show
+  ['live-card', 'batt-card', 'more-card', 'raw-card'].forEach(id => { const el = $(id); if (el) el.hidden = !on; });
 }
 function openSpeedValue() { const v = parseInt(($('speed-in') || {}).value, 10); return isNaN(v) ? 45 : v; }
 function ekfvSpeedValue() { const v = parseInt(($('ekfv-in') || {}).value, 10); return isNaN(v) ? 20 : v; }
@@ -292,32 +302,6 @@ async function pickAndConnect() {
     log(looksApollo ? 'name matches the app\'s own Apollo classifier.' : 'name does not match "hw"/"apollo"/"phantom" - connecting anyway, the GATT service decides.', looksApollo ? 'log-ok' : undefined);
     await connectGatt(device);
   } catch (e) { log('scan/connect cancelled: ' + e, 'log-err'); }
-}
-
-function charProps(c) { const p = c.properties || {}; return ['read', 'write', 'writeWithoutResponse', 'notify', 'indicate'].filter(k => p[k]).join(',') || '-'; }
-async function scanAllDevicesDiagnostic() {
-  if (!navigator.bluetooth) { log('Web Bluetooth not available. Use Bluefy (iOS) or Chrome (Android/desktop).', 'log-err'); return; }
-  let dev = null;
-  try {
-    log('DIAG: showing ALL Bluetooth devices. Pick your scooter, even if the name looks wrong or missing.', 'log-ok');
-    dev = await navigator.bluetooth.requestDevice({ acceptAllDevices: true, optionalServices: ALL_SERVICES });
-  } catch (e) { log('DIAG cancelled: ' + e, 'log-err'); return; }
-  log('DIAG selected: name="' + (dev.name || '(no name)') + '"  id=' + dev.id);
-  log('DIAG classify (isHwBleName): ' + (classifyApolloName(dev.name) ? 'matches' : 'does not match'));
-  try {
-    log('DIAG: connecting to read the GATT services ...');
-    const srv = await dev.gatt.connect();
-    let svcs = [];
-    try { svcs = await srv.getPrimaryServices(); } catch (e) { log('DIAG getPrimaryServices error: ' + e, 'log-err'); }
-    if (!svcs || !svcs.length) log('DIAG: none of the known services is present (DATA F1F0, AT F2F0, OTA ...FE00).', 'log-err');
-    else for (const s of svcs) {
-      log('DIAG service ' + s.uuid, 'log-ok');
-      try { const chs = await s.getCharacteristics(); for (const c of chs) log('DIAG   char ' + c.uuid + '  [' + charProps(c) + ']'); }
-      catch (e) { log('DIAG   (characteristics unreadable: ' + e + ')'); }
-    }
-    try { dev.gatt.disconnect(); } catch (e) {}
-    log('DIAG done. Copy the log and send it. For the full picture use nRF Connect on Android.', 'log-ok');
-  } catch (e) { log('DIAG connect failed: ' + e, 'log-err'); }
 }
 
 async function connectGatt(dev) {
@@ -409,7 +393,7 @@ function handleFrame(b) {
 }
 
 // Decodes the 24-byte MonitorSnapshot frame (head 0xAB), belegt native 0x8e5f0 (offsets) + the
-// decompiled MonitorSnapshot constructor/signature 0x184f1 (field names) - see GUIDE/gesamtanalyse.md.
+// decompiled MonitorSnapshot constructor/signature 0x184f1 (field names).
 function decodeMonitorFrame(b) {
   if (b.length < 24) { log('  monitor frame too short (' + b.length + ' bytes, need >= 24) - not decoded.'); return; }
   const speed = rdS16BE(b, 0x00) / 10;
@@ -524,7 +508,7 @@ function initLangSwitch() { document.querySelectorAll('#langs button').forEach(b
 function applyTheme(dark) {
   document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
   const b = $('btn-theme');
-  if (b) { b.innerHTML = dark ? '&#9728;' : '&#9790;'; b.setAttribute('aria-label', t(dark ? 'themeToLight' : 'themeToDark')); b.title = b.getAttribute('aria-label'); }   // scan-ok: a fixed character, not user input
+  if (b) { b.textContent = dark ? '\u2600' : '\u263E'; b.setAttribute('aria-label', t(dark ? 'themeToLight' : 'themeToDark')); b.title = b.getAttribute('aria-label'); }
   try { localStorage.setItem(LS_THEME, dark ? 'dark' : 'light'); } catch (e) {}
 }
 function initTheme() {
@@ -660,8 +644,6 @@ window.addEventListener('DOMContentLoaded', () => {
   { try { const pin = localStorage.getItem(LS_PIN); if (pin && $('pin-in')) $('pin-in').value = pin; } catch (e) {} }
   applyLang();
 
-  log('protocol self-test (frame builders vs the specification read out of Apollo\'s own app/library): ' + (PROTO_OK ? 'OK' : 'FAILED'), PROTO_OK ? 'log-ok' : 'log-err');
-
   $('btn-conn').addEventListener('click', () => { if ($('btn-conn').dataset.act === 'disconnect') disconnectBle(); else pickAndConnect(); });
   { const sel = $('model-in'); if (sel) sel.addEventListener('change', () => { try { localStorage.setItem(LS_MODEL, sel.value); } catch (e) {} }); }
   $('btn-toggle').addEventListener('click', doSpeedToggle);
@@ -689,8 +671,8 @@ window.addEventListener('DOMContentLoaded', () => {
     confirmRisky(t('lblSnCode') + ': "' + sn + '"', () => cmdSendSnCode(sn));
   }); }
   { const b = $('btn-copy-log'); if (b) b.addEventListener('click', copyLog); }
-  { const b = $('btn-diag'); if (b) b.addEventListener('click', scanAllDevicesDiagnostic); }
   { const b = $('btn-clear-log'); if (b) b.addEventListener('click', clearLog); }
+  { const b = $('btn-save-log'); if (b) b.addEventListener('click', saveLog); }
 
   setControlsEnabled(false);
   if (!navigator.bluetooth) log('Web Bluetooth not available. On iOS use the Bluefy browser.', 'log-err');

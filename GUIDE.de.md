@@ -3,6 +3,8 @@
 Diese Anleitung führt Schritt für Schritt durch das Apollo Tool. Sie setzt nichts voraus und sagt
 offen, was bereits zerlegt ist und was noch nicht.
 
+> **Wichtig für Fehler-Reports:** Schalte unten auf der Seite den **Diagnose-Log** ein, *bevor* du dich mit dem Scooter verbindest. Nur dann wird der komplette Verbindungsaufbau mitgeschnitten - und genau diese Zeilen brauchen wir in einem [Ticket](https://github.com/Laufbursche42/Laufbursche42/issues), um ein Problem nachzuvollziehen.
+
 ## Was du brauchst
 
 - Einen Apollo-Scooters-E-Scooter (Hersteller-App "Apollo Scooters", Paketname `com.apolloscooters`).
@@ -105,3 +107,6 @@ dem Kotlin-Code der Hersteller-App (`ApolloBleScootersSdk.java`) belegt sind:
 Das Anheben der Höchstgeschwindigkeit hebt die Drossel auf. Die Betriebserlaubnis erlischt und der
 Betrieb auf öffentlichen Wegen ist dann nicht erlaubt. Nutze das Werkzeug nur am eigenen Fahrzeug auf
 privatem Gelände und auf eigenes Risiko.
+
+## Mithelfen
+Willst du herausfinden, ob und wie Tuning bei deinem Scooter geht? Teste dieses Tool an deinem eigenen Fahrzeug und öffne ein Ticket auf [GitHub](https://github.com/Laufbursche42/Laufbursche42/issues) - mit deinem Modell und was funktioniert hat (oder nicht). So finden wir gemeinsam heraus, was bei welchem Modell möglich ist.
