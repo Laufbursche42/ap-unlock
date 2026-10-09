@@ -5,7 +5,7 @@
 
 'use strict';
 
-const BUILD = 'v7';   // logged on load so a tester's log reveals which deployed build is running
+const BUILD = 'v8';   // logged on load so a tester's log reveals which deployed build is running
 
 // --------------------------- helpers ---------------------------
 
@@ -673,6 +673,7 @@ window.addEventListener('DOMContentLoaded', () => {
   { const b = $('btn-copy-log'); if (b) b.addEventListener('click', copyLog); }
   { const b = $('btn-clear-log'); if (b) b.addEventListener('click', clearLog); }
   { const b = $('btn-save-log'); if (b) b.addEventListener('click', saveLog); }
+  { const sa = $('showall'); if (sa) sa.addEventListener('change', () => { log('show-all-devices: ' + (sa.checked ? 'on' : 'off')); }); }
 
   setControlsEnabled(false);
   if (!navigator.bluetooth) log('Web Bluetooth not available. On iOS use the Bluefy browser.', 'log-err');
